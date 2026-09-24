@@ -1,0 +1,246 @@
+openapi: 3.0.3
+info:
+  title: Clientes y Pedidos API
+  version: 1.0.0
+  description: Microservicio PHP 8 - Gestión de Clientes y Pedidos
+
+servers:
+  - url: http://localhost:8080/api
+    description: Desarrollo local
+
+security:
+  - BearerAuth: []
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Cliente:
+      type: object
+      properties:
+        id: { type: integer }
+        nombre: { type: string }
+        email: { type: string, format: email }
+        telefono: { type: string }
+        direccion: { type: string }
+        activo: { type: boolean }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+
+    ClienteForm:
+      type: object
+      required: [nombre, email]
+      properties:
+        nombre: { type: string, maxLength: 100 }
+        email: { type: string, format: email }
+        telefono: { type: string }
+        direccion: { type: string }
+
+    Pedido:
+      type: object
+      properties:
+        id: { type: integer }
+        cliente_id: { type: integer }
+        cliente_nombre: { type: string }
+        descripcion: { type: string }
+        total: { type: number, format: float }
+        estado:
+          type: string
+          enum: [pendiente, completado, cancelado]
+        fecha_pedido: { type: string, format: date }
+
+    PedidoForm:
+      type: object
+      required: [cliente_id, descripcion, total]
+      properties:
+        cliente_id: { type: integer }
+        descripcion: { type: string }
+        total: { type: number, minimum: 0 }
+        estado:
+          type: string
+          enum: [pendiente, completado, cancelado]
+          default: pendiente
+        fecha_pedido: { type: string, format: date }
+
+    Estadisticas:
+      type: object
+      properties:
+        total_pedidos: { type: integer }
+        completados: { type: integer }
+        pendientes: { type: integer }
+        cancelados: { type: integer }
+        clientes_activos: { type: integer }
+        actividad_por_dia:
+          type: array
+          items:
+            type: object
+            properties:
+              fecha: { type: string, format: date }
+              total: { type: integer }
+
+    ApiResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        message: { type: string }
+        data: {}
+
+paths:
+  /clientes:
+    get:
+      summary: Listar clientes paginados
+      parameters:
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 15 }
+      responses:
+        '200':
+          description: Lista de clientes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ApiResponse' }
+
+    post:
+      summary: Crear cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClienteForm' }
+      responses:
+        '201': { description: Cliente creado }
+        '422': { description: Datos inválidos }
+
+  /clientes/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+
+    get:
+      summary: Obtener cliente por ID
+      responses:
+        '200': { description: Cliente encontrado }
+        '404': { description: No encontrado }
+
+    put:
+      summary: Actualizar cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClienteForm' }
+      responses:
+        '200': { description: Actualizado }
+
+    delete:
+      summary: Eliminar cliente (soft delete)
+      responses:
+        '200': { description: Eliminado }
+
+  /pedidos:
+    get:
+      summary: Listar pedidos con filtros
+      parameters:
+        - in: query
+          name: estado
+          schema: { type: string, enum: [pendiente, completado, cancelado] }
+        - in: query
+          name: cliente_id
+          schema: { type: integer }
+        - in: query
+          name: fecha_desde
+          schema: { type: string, format: date }
+        - in: query
+          name: fecha_hasta
+          schema: { type: string, format: date }
+        - in: query
+          name: page
+          schema: { type: integer, default: 1 }
+        - in: query
+          name: per_page
+          schema: { type: integer, default: 15 }
+      responses:
+        '200': { description: Lista de pedidos }
+
+    post:
+      summary: Crear pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PedidoForm' }
+      responses:
+        '201': { description: Pedido creado }
+
+  /pedidos/{id}:
+    parameters:
+      - in: path
+        name: id
+        required: true
+        schema: { type: integer }
+
+    get:
+      summary: Obtener pedido por ID
+      responses:
+        '200': { description: Pedido encontrado }
+
+    put:
+      summary: Actualizar pedido
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PedidoForm' }
+      responses:
+        '200': { description: Actualizado }
+
+    delete:
+      summary: Eliminar pedido
+      responses:
+        '200': { description: Eliminado }
+
+  /pedidos/{id}/completar:
+    patch:
+      summary: Marcar pedido como completado
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Completado }
+
+  /pedidos/{id}/cancelar:
+    patch:
+      summary: Cancelar pedido
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: integer }
+      responses:
+        '200': { description: Cancelado }
+
+  /estadisticas:
+    get:
+      summary: Estadísticas del dashboard
+      responses:
+        '200':
+          description: Estadísticas
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/ApiResponse'
+                  - type: object
+                    properties:
+                      data: { $ref: '#/components/schemas/Estadisticas' }

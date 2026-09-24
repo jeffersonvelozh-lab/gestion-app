@@ -1,0 +1,12 @@
+.env
+**/bin/
+**/obj/
+**/vendor/
+**/node_modules/
+**/.angular/
+**/dist/
+*.user
+*.suo
+.vs/
+.idea/
+*.log

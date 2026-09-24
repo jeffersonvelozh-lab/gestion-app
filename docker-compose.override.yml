@@ -1,0 +1,12 @@
+services:
+  postgres:
+    volumes:
+      - ./database/seeds:/docker-entrypoint-initdb.d/seeds
+
+  auth-service:
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+
+  clientes-pedidos-service:
+    environment:
+      APP_ENV: development
