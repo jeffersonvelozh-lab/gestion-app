@@ -11,14 +11,45 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     {
         modelBuilder.Entity<User>(entity =>
         {
+            entity.ToTable("Users");
+
             entity.HasKey(u => u.Id);
-            entity.Property(u => u.Email).IsRequired().HasMaxLength(150);
+
+            entity.Property(u => u.Id)
+                  .HasColumnName("id");
+
+            entity.Property(u => u.Name)
+                  .HasColumnName("name")
+                  .IsRequired()
+                  .HasMaxLength(100);
+
+            entity.Property(u => u.Email)
+                  .HasColumnName("email")
+                  .IsRequired()
+                  .HasMaxLength(150);
+
             entity.HasIndex(u => u.Email).IsUnique();
-            entity.Property(u => u.Name).IsRequired().HasMaxLength(100);
-            entity.Property(u => u.PasswordHash).IsRequired();
-            entity.Property(u => u.Role).HasDefaultValue("user").HasMaxLength(20);
-            entity.Property(u => u.CreatedAt).HasDefaultValueSql("NOW()");
-            entity.Property(u => u.UpdatedAt).HasDefaultValueSql("NOW()");
+
+            entity.Property(u => u.PasswordHash)
+                  .HasColumnName("password_hash")
+                  .IsRequired();
+
+            entity.Property(u => u.Role)
+                  .HasColumnName("role")
+                  .HasDefaultValue("user")
+                  .HasMaxLength(20);
+
+            entity.Property(u => u.IsActive)
+                  .HasColumnName("is_active")
+                  .HasDefaultValue(true);
+
+            entity.Property(u => u.CreatedAt)
+                  .HasColumnName("created_at")
+                  .HasDefaultValueSql("NOW()");
+
+            entity.Property(u => u.UpdatedAt)
+                  .HasColumnName("updated_at")
+                  .HasDefaultValueSql("NOW()");
         });
     }
 }
